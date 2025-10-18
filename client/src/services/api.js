@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// ✅ Automatically choose correct backend URL (local or production)
+// ✅ Detect environment & use correct backend URL
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://rentxpress.onrender.com";
 
