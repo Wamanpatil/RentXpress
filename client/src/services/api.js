@@ -1,10 +1,12 @@
 import axios from "axios";
 
-// ✅ Detect environment: localhost (development) or Vercel (production)
+// ✅ Auto-detect if the site is running locally or in production
 const BASE_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:5000"
     : "https://rentxpress.onrender.com";
+
+console.log("🌍 Using API base URL:", BASE_URL);
 
 const API = axios.create({
   baseURL: `${BASE_URL}/api`,
