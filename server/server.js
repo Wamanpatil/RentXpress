@@ -7,24 +7,22 @@ import { fileURLToPath } from "url";
 import { connectDB } from "./config/db.js";
 import cloudinary from "./config/cloudinary.js";
 
-// ✅ Import route files
+// ✅ Import routes
 import authRoutes from "./routes/authRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js"; // ✅ Admin route
+import adminRoutes from "./routes/adminRoutes.js";
 
-// ✅ Initialize environment variables
+// ✅ Load env variables
 dotenv.config();
 
-// ✅ Initialize Express app
+// ✅ Initialize app
 const app = express();
-
-// ✅ Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Connect to MongoDB
+// ✅ Database connection
 (async () => {
   try {
     await connectDB();
@@ -35,39 +33,48 @@ const __dirname = path.dirname(__filename);
   }
 })();
 
-// ✅ Middleware Setup
+// ✅ CORS setup (local + production)
+const allowedOrigins = [
+  "http://localhost:5173",          // local frontend
+  "https://rent-xpress.vercel.app", // live frontend (Vercel)
+];
+
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // Frontend URL (Vite)
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.error("❌ CORS blocked origin:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
-app.use(express.json({ limit: "10mb" })); // Prevent large body payloads
+// ✅ Middleware
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-
-// ✅ Serve uploaded images (local uploads)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ Root Route (Health Check)
+// ✅ Root route
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
     message: "🚀 RentXpress Backend Running Successfully!",
-    version: "3.3.0",
-    serverTime: new Date().toLocaleString(),
   });
 });
 
-// ✅ API Routes
-app.use("/api/auth", authRoutes);        // Authentication routes
-app.use("/api/items", itemRoutes);       // Item CRUD
-app.use("/api/bookings", bookingRoutes); // Booking CRUD
-app.use("/api/reviews", reviewRoutes);   // Review system
-app.use("/api/admin", adminRoutes);      // ✅ Admin operations
+// ✅ API routes
+app.use("/api/auth", authRoutes);
+app.use("/api/items", itemRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/admin", adminRoutes);
 
-// ✅ 404 Route Handler
+// ✅ 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -75,17 +82,16 @@ app.use((req, res) => {
   });
 });
 
-// ✅ Global Error Handler
+// ✅ Error handler
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err);
+  console.error("❌ Server Error:", err.message);
   res.status(500).json({
     success: false,
     message: "Internal Server Error",
-    error: err.message,
   });
 });
 
-// ✅ Cloudinary Connection Check
+// ✅ Cloudinary connection check
 (async () => {
   try {
     await cloudinary.api.ping();
@@ -95,16 +101,11 @@ app.use((err, req, res, next) => {
   }
 })();
 
-// ✅ Start Express Server
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log("\n===============================");
   console.log(`✅ RentXpress Server running on port ${PORT}`);
-  console.log(`🌐 Access API at: http://localhost:${PORT}`);
+  console.log(`🌐 Access API at: https://rentxpress.onrender.com`);
   console.log("===============================\n");
-});
-
-// ✅ Handle unexpected promise rejections
-process.on("unhandledRejection", (reason) => {
-  console.error("⚠️ Unhandled Promise Rejection:", reason);
 });

@@ -1,7 +1,9 @@
 import axios from "axios";
 
+// ✅ Dynamic backend URL (auto switches between local & live)
 const API = axios.create({
-  baseURL: "http://localhost:5000/api", // backend URL
+  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`,
+  withCredentials: true, // allow cookies / JWT
 });
 
 // ✅ Add new item
@@ -12,7 +14,7 @@ export const addItem = async (formData) => {
     });
     return res.data;
   } catch (err) {
-    console.error("Error adding item:", err);
+    console.error("❌ Error adding item:", err.response?.data || err.message);
     throw err;
   }
 };
@@ -23,7 +25,7 @@ export const getAllItems = async () => {
     const res = await API.get("/items");
     return res.data;
   } catch (err) {
-    console.error("Error fetching items:", err);
+    console.error("❌ Error fetching items:", err.response?.data || err.message);
     throw err;
   }
 };
@@ -34,7 +36,7 @@ export const deleteItem = async (id) => {
     const res = await API.delete(`/items/${id}`);
     return res.data;
   } catch (err) {
-    console.error("Error deleting item:", err);
+    console.error("❌ Error deleting item:", err.response?.data || err.message);
     throw err;
   }
 };
