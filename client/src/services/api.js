@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// ✅ Use production API on live Vercel site, localhost for development
+// ✅ Detect environment: localhost (development) or Vercel (production)
 const BASE_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:5000"
