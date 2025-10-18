@@ -1,8 +1,10 @@
 import axios from "axios";
 
-// ✅ Detect environment & use correct backend URL
+// ✅ Use production API on live Vercel site, localhost for development
 const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://rentxpress.onrender.com";
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://rentxpress.onrender.com";
 
 const API = axios.create({
   baseURL: `${BASE_URL}/api`,
