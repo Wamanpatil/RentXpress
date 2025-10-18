@@ -1,0 +1,40 @@
+import axios from "axios";
+
+const API = axios.create({
+  baseURL: "http://localhost:5000/api", // backend URL
+});
+
+// ✅ Add new item
+export const addItem = async (formData) => {
+  try {
+    const res = await API.post("/items/add", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  } catch (err) {
+    console.error("Error adding item:", err);
+    throw err;
+  }
+};
+
+// ✅ Get all items
+export const getAllItems = async () => {
+  try {
+    const res = await API.get("/items");
+    return res.data;
+  } catch (err) {
+    console.error("Error fetching items:", err);
+    throw err;
+  }
+};
+
+// ✅ Delete an item
+export const deleteItem = async (id) => {
+  try {
+    const res = await API.delete(`/items/${id}`);
+    return res.data;
+  } catch (err) {
+    console.error("Error deleting item:", err);
+    throw err;
+  }
+};
