@@ -1,11 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import "./index.css"; // ✅ Tailwind/CSS import (keep if using Tailwind)
 
-// ✅ Optional: Tailwind or CSS import (keep this if you use Tailwind)
-import "./index.css";
+// ✅ Debug: Log Vite environment variable during build
+console.log("✅ Build-time VITE_API_BASE_URL =", import.meta.env.VITE_API_BASE_URL);
 
-// ✅ Error Logging
+// ✅ Error Logging (for runtime errors)
 window.addEventListener("error", (e) => {
   console.error("❌ Window Error:", e.message);
 });
@@ -13,7 +14,7 @@ window.addEventListener("unhandledrejection", (e) => {
   console.error("❌ Promise Rejection:", e.reason);
 });
 
-// ✅ Render App
+// ✅ Root Element Check
 const root = document.getElementById("root");
 
 if (!root) {
