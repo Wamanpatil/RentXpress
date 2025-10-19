@@ -1,7 +1,16 @@
 import axios from "axios";
 
+const baseURL =
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  "https://rentxpress.onrender.com/api";
+
+console.log("🌐 Using API Base URL:", baseURL);
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "https://rentxpress.onrender.com/api",
+  baseURL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 // ✅ Add item
@@ -23,3 +32,5 @@ export const deleteItem = async (id) => {
   const res = await API.delete(`/items/${id}`);
   return res.data;
 };
+
+export default API;
