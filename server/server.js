@@ -29,17 +29,21 @@ connectDB()
     process.exit(1);
   });
 
-// ✅ CORS Setup using environment variable
+// ✅ Allowed Origins for CORS (Production + Dev)
 const allowedOrigins = [
-  "http://localhost:5173", // Local Dev
-  process.env.FRONTEND_URL // ✅ Dynamically from Render Environment
+  "http://localhost:5173",            // Local development (Vite)
+  "https://rentxpress.netlify.app",   // ✅ Your live frontend (Netlify)
+  "https://rentxpress.onrender.com"   // ✅ Backend itself
 ];
 
+// ✅ Advanced CORS Configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        console.log("✅ CORS allowed origin:", origin || "Server-to-server request");
+      if (!origin) return callback(null, true); // allow server-to-server calls
+
+      if (allowedOrigins.includes(origin)) {
+        console.log("✅ CORS allowed origin:", origin);
         callback(null, true);
       } else {
         console.warn("🚫 CORS blocked origin:", origin);
@@ -47,16 +51,20 @@ app.use(
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// ✅ Handle preflight requests explicitly
+app.options("*", cors());
 
 // ✅ Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ Root route
+// ✅ Root route for testing
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -81,7 +89,7 @@ app.use((req, res) => {
 
 // ✅ Error handler
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err.stack);
+  console.error("❌ Server Error:", err.message);
   res.status(500).json({
     success: false,
     message: "Internal Server Error",
@@ -89,7 +97,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ✅ Cloudinary Connection Check
+// ✅ Cloudinary connection check
 (async () => {
   try {
     await cloudinary.api.ping();
