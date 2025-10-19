@@ -33,21 +33,26 @@ const __dirname = path.dirname(__filename);
   }
 })();
 
-// ✅ CORS setup (local + production)
+// ✅ Define allowed origins (CORS)
 const allowedOrigins = [
-  "http://localhost:5173",          // local frontend
-  "https://rent-xpress.vercel.app", // live frontend (Vercel)
+  "http://localhost:5173", // Local frontend
+  "https://rent-xpress.vercel.app", // Vercel frontend
+  "https://rentxpress.vercel.app", // Backup domain (if Vercel rewrites)
 ];
 
+// ✅ Configure CORS
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.error("❌ CORS blocked origin:", origin);
-        callback(new Error("Not allowed by CORS"));
+    origin: (origin, callback) => {
+      if (!origin) {
+        // Allow server-to-server or Postman requests
+        return callback(null, true);
       }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.warn("🚫 CORS blocked origin:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
