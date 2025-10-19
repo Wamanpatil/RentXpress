@@ -14,45 +14,38 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 
-// ✅ Load env variables
+// ✅ Load environment variables
 dotenv.config();
 
-// ✅ Initialize app
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Database connection
-(async () => {
-  try {
-    await connectDB();
-    console.log("✅ MongoDB Connected Successfully");
-  } catch (error) {
-    console.error("❌ MongoDB Connection Failed:", error.message);
+// ✅ Connect to MongoDB first
+connectDB()
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch((err) => {
+    console.error("❌ MongoDB Connection Failed:", err.message);
     process.exit(1);
-  }
-})();
+  });
 
-// ✅ Define allowed origins (CORS)
+// ✅ Allowed origins for CORS
 const allowedOrigins = [
-  "http://localhost:5173", // Local frontend
-  "https://rent-xpress.vercel.app", // Vercel frontend
-  "https://rentxpress.vercel.app", // Backup domain (if Vercel rewrites)
+  "http://localhost:5173",
+  "https://rent-xpress.vercel.app",
+  "https://rentxpress.vercel.app"
 ];
 
-// ✅ Configure CORS
+// ✅ CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) {
-        // Allow server-to-server or Postman requests
-        return callback(null, true);
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn("🚫 CORS blocked origin:", origin);
+        callback(new Error("Not allowed by CORS"));
       }
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      console.warn("🚫 CORS blocked origin:", origin);
-      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -89,14 +82,15 @@ app.use((req, res) => {
 
 // ✅ Error handler
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err.message);
+  console.error("❌ Server Error:", err.stack);
   res.status(500).json({
     success: false,
     message: "Internal Server Error",
+    error: err.message,
   });
 });
 
-// ✅ Cloudinary connection check
+// ✅ Cloudinary check
 (async () => {
   try {
     await cloudinary.api.ping();
@@ -106,7 +100,7 @@ app.use((err, req, res, next) => {
   }
 })();
 
-// ✅ Start server
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log("\n===============================");
