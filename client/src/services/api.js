@@ -1,49 +1,25 @@
 import axios from "axios";
 
-// ✅ Use production API on Vercel, localhost in dev
-const BASE_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:5000"
-    : "https://rentxpress.onrender.com";
-
-console.log("🌍 API Base URL:", BASE_URL);
-
 const API = axios.create({
-  baseURL: `${BASE_URL}/api`,
-  withCredentials: true,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
 });
 
 // ✅ Add new item
 export const addItem = async (formData) => {
-  try {
-    const res = await API.post("/items/add", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return res.data;
-  } catch (err) {
-    console.error("❌ Error adding item:", err);
-    throw err;
-  }
+  const res = await API.post("/items/add", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
 };
 
 // ✅ Get all items
 export const getAllItems = async () => {
-  try {
-    const res = await API.get("/items");
-    return res.data;
-  } catch (err) {
-    console.error("❌ Error fetching items:", err);
-    throw err;
-  }
+  const res = await API.get("/items");
+  return res.data;
 };
 
 // ✅ Delete an item
 export const deleteItem = async (id) => {
-  try {
-    const res = await API.delete(`/items/${id}`);
-    return res.data;
-  } catch (err) {
-    console.error("❌ Error deleting item:", err);
-    throw err;
-  }
+  const res = await API.delete(`/items/${id}`);
+  return res.data;
 };
