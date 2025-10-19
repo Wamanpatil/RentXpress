@@ -21,7 +21,7 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Connect to MongoDB first
+// ✅ Connect to MongoDB
 connectDB()
   .then(() => console.log("✅ MongoDB Connected Successfully"))
   .catch((err) => {
@@ -29,15 +29,12 @@ connectDB()
     process.exit(1);
   });
 
-// ✅ Allowed origins for CORS (Updated for Netlify)
+// ✅ CORS Setup using environment variable
 const allowedOrigins = [
-  "http://localhost:5173",             // Local Dev (Vite)
-  "https://rent-xpress.vercel.app",    // Old frontend
-  "https://rentxpress.vercel.app",     // Old frontend variant
-  "https://rentxpress.netlify.app"     // ✅ New Netlify frontend
+  "http://localhost:5173", // Local Dev
+  process.env.FRONTEND_URL // ✅ Dynamically from Render Environment
 ];
 
-// ✅ CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -92,7 +89,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ✅ Cloudinary check
+// ✅ Cloudinary Connection Check
 (async () => {
   try {
     await cloudinary.api.ping();
