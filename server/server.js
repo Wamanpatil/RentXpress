@@ -29,11 +29,12 @@ connectDB()
     process.exit(1);
   });
 
-// ✅ Allowed origins for CORS
+// ✅ Allowed origins for CORS (Updated for Netlify)
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://rent-xpress.vercel.app",
-  "https://rentxpress.vercel.app"
+  "http://localhost:5173",             // Local Dev (Vite)
+  "https://rent-xpress.vercel.app",    // Old frontend
+  "https://rentxpress.vercel.app",     // Old frontend variant
+  "https://rentxpress.netlify.app"     // ✅ New Netlify frontend
 ];
 
 // ✅ CORS configuration
@@ -41,6 +42,7 @@ app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
+        console.log("✅ CORS allowed origin:", origin || "Server-to-server request");
         callback(null, true);
       } else {
         console.warn("🚫 CORS blocked origin:", origin);
