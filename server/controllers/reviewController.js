@@ -1,3 +1,5 @@
+// server/controllers/reviewController.js
+import mongoose from "mongoose";
 import Review from "../models/reviewModel.js";
 import Item from "../models/itemModel.js";
 import User from "../models/userModel.js";
@@ -11,15 +13,25 @@ export const addReview = async (req, res) => {
       return res.status(400).json({ success: false, message: "⚠️ All fields are required." });
     }
 
-    const item = await Item.findById(itemId);
-    const user = await User.findById(userId);
+    // Convert IDs to ObjectId type safely
+    const validItemId = new mongoose.Types.ObjectId(itemId);
+    const validUserId = new mongoose.Types.ObjectId(userId);
+
+    const item = await Item.findById(validItemId);
+    const user = await User.findById(validUserId);
+
     if (!item || !user) {
       return res.status(404).json({ success: false, message: "❌ Invalid item or user." });
     }
 
-    const review = new Review({ item: itemId, user: userId, rating, comment });
-    await review.save();
+    const review = new Review({
+      item: validItemId,
+      user: validUserId,
+      rating,
+      comment,
+    });
 
+    await review.save();
     res.status(201).json({
       success: true,
       message: "✅ Review added successfully!",
@@ -35,7 +47,11 @@ export const addReview = async (req, res) => {
 export const getReviewsByItem = async (req, res) => {
   try {
     const { itemId } = req.params;
-    const reviews = await Review.find({ item: itemId })
+
+    // Convert safely to ObjectId
+    const validItemId = new mongoose.Types.ObjectId(itemId);
+
+    const reviews = await Review.find({ item: validItemId })
       .populate("user", "name email")
       .sort({ createdAt: -1 });
 
