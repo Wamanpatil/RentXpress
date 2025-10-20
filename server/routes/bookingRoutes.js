@@ -9,16 +9,16 @@ import {
 
 const router = express.Router();
 
-// ✅ Create booking
+// ✅ Create new booking
 router.post("/", addBooking);
 
-// ✅ Get all bookings
+// ✅ Get all bookings (admin/debug)
 router.get("/", getAllBookings);
 
 // ✅ Get user-specific bookings
 router.get("/user/:userId", getBookingsByUser);
 
-// ✅ Delete a booking
+// ✅ Delete booking by ID
 router.delete("/:id", deleteBooking);
 
 export default router;
