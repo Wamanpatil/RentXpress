@@ -1,3 +1,4 @@
+// server/routes/bookingRoutes.js
 import express from "express";
 import {
   addBooking,
@@ -11,13 +12,13 @@ const router = express.Router();
 // ✅ Create booking
 router.post("/", addBooking);
 
-// ✅ Get all bookings (admin)
+// ✅ Get all bookings
 router.get("/", getAllBookings);
 
-// ✅ Get bookings by user ID
+// ✅ Get user-specific bookings
 router.get("/user/:userId", getBookingsByUser);
 
-// ✅ Delete booking
+// ✅ Delete a booking
 router.delete("/:id", deleteBooking);
 
 export default router;

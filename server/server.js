@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import fileUpload from "express-fileupload";
 
+// ✅ Import all route files
 import itemRoutes from "./routes/itemRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
@@ -13,7 +14,7 @@ import authRoutes from "./routes/authRoutes.js";
 dotenv.config();
 const app = express();
 
-// ✅ Allow cross-origin from Netlify and local dev
+// ✅ Enable CORS (Frontend URLs)
 app.use(
   cors({
     origin: ["https://rentxpress.netlify.app", "http://localhost:5173"],
@@ -22,7 +23,7 @@ app.use(
   })
 );
 
-// ✅ File upload middleware FIRST (important)
+// ✅ File Upload (MUST come before JSON parser)
 app.use(
   fileUpload({
     useTempFiles: true,
@@ -34,32 +35,41 @@ app.use(
   })
 );
 
-// ✅ Now JSON parsers
+// ✅ Body Parsers
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
-// ✅ Root test route
+// ✅ Root API test
 app.get("/", (req, res) => {
   res.json({ message: "🌐 RentXpress Backend Running Successfully!" });
 });
 
-// ✅ API Routes
+// ✅ Mount API Routes
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
 
-// ✅ 404 fallback
+// ✅ Global Error / 404 Handler
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: `Route not found: ${req.originalUrl}` });
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.originalUrl}`,
+  });
 });
 
-// ✅ MongoDB connection
+// ✅ MongoDB Connection
 mongoose
-  .connect(process.env.MONGO_URI, { dbName: "RentXpressDB" })
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ MongoDB Error:", err));
+  .connect(process.env.MONGO_URI, {
+    dbName: "RentXpressDB",
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
 
-// ✅ Start server
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 RentXpress backend running on port ${PORT}`);
+});
