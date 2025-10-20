@@ -1,3 +1,4 @@
+// server/models/itemModel.js
 import mongoose from "mongoose";
 
 const itemSchema = new mongoose.Schema(
@@ -7,9 +8,9 @@ const itemSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     location: { type: String, required: true },
     description: { type: String, required: true },
-    image: { type: String },
     ownerName: { type: String, required: true },
     ownerContact: { type: String, required: true },
+    image: { type: String, default: "" },
   },
   { timestamps: true }
 );
