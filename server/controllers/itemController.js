@@ -1,18 +1,15 @@
 import Item from "../models/Item.js";
 import cloudinary from "cloudinary";
 
-// ✅ Add Item Controller
 export const addItem = async (reqBody) => {
   try {
     console.log("🧩 Adding new item:", reqBody);
-
-    // ✅ Validate required fields
     const { name, category, price, location, description, ownerName, ownerContact, image } = reqBody;
+
     if (!name || !category || !price || !location || !description || !ownerName) {
       throw new Error("Missing required fields");
     }
 
-    // ✅ Create and save item in MongoDB
     const newItem = new Item({
       name,
       category,
@@ -21,7 +18,7 @@ export const addItem = async (reqBody) => {
       description,
       ownerName,
       ownerContact,
-      image: image || "https://cdn-icons-png.flaticon.com/512/1048/1048953.png", // fallback
+      image: image || "https://cdn-icons-png.flaticon.com/512/1048/1048953.png",
     });
 
     const savedItem = await newItem.save();
@@ -33,7 +30,6 @@ export const addItem = async (reqBody) => {
   }
 };
 
-// ✅ Get All Items
 export const getItems = async () => {
   try {
     const items = await Item.find().sort({ createdAt: -1 });
@@ -45,30 +41,23 @@ export const getItems = async () => {
   }
 };
 
-// ✅ Delete Item
 export const deleteItem = async (id) => {
   try {
-    console.log("🗑️ Deleting item with ID:", id);
-
     const item = await Item.findById(id);
-    if (!item) {
-      console.warn("⚠️ Item not found:", id);
-      return null;
-    }
+    if (!item) return null;
 
-    // ✅ Delete image from Cloudinary if exists
     if (item.image && item.image.includes("cloudinary.com")) {
       const publicId = item.image.split("/").pop().split(".")[0];
       try {
         await cloudinary.v2.uploader.destroy(`rentxpress/items/${publicId}`);
         console.log("🧹 Cloudinary image deleted:", publicId);
       } catch (cloudErr) {
-        console.warn("⚠️ Cloudinary image delete failed:", cloudErr.message);
+        console.warn("⚠️ Cloudinary delete failed:", cloudErr.message);
       }
     }
 
     await Item.findByIdAndDelete(id);
-    console.log("✅ Item deleted successfully:", id);
+    console.log("✅ Item deleted:", id);
     return true;
   } catch (error) {
     console.error("❌ Error deleting item:", error.message);

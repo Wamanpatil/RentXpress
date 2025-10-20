@@ -1,53 +1,43 @@
 import express from "express";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
+import fileUpload from "express-fileupload";
+import cloudinary from "cloudinary";
+
+// Routes
 import itemRoutes from "./routes/itemRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
-import cloudinary from "cloudinary";
-import fileUpload from "express-fileupload";
 
-// ✅ Initialize
 dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// ✅ Dynamic path resolution (for static use if needed later)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ CORS setup (Netlify + localhost)
-const allowedOrigins = [
-  "https://rentxpress.netlify.app", // ✅ your production frontend
-  "http://localhost:5173",          // ✅ for local development
-];
-
+// ✅ CORS
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`❌ Blocked by CORS: ${origin}`);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: [
+      "https://rentxpress.netlify.app",
+      "http://localhost:5173",
+    ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
-// ✅ Middleware setup
-app.use(express.json({ limit: "10mb" }));
+// ✅ Middleware
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload({ useTempFiles: true }));
 
-// ✅ Cloudinary configuration
+// ✅ Cloudinary Config
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -56,47 +46,33 @@ cloudinary.v2.config({
 
 // ✅ MongoDB Connection
 mongoose
-  .connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 15000, // handles MongoDB timeout better
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected Successfully"))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// ✅ Routes
+// ✅ API Routes
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reviews", reviewRoutes);
 
-// ✅ Default route
+// ✅ Default Route
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
-    message: "🚀 RentXpress API running successfully!",
-    environment: process.env.NODE_ENV || "development",
+    message: "🚀 RentXpress API running successfully",
   });
 });
 
-// ✅ Catch invalid routes
+// ✅ 404 Handler
 app.use((req, res) => {
-  console.warn(`⚠️ Invalid route requested: ${req.originalUrl}`);
   res.status(404).json({
     success: false,
     message: `🚫 Route not found: ${req.originalUrl}`,
   });
 });
 
-// ✅ Global error handler (extra safety)
-app.use((err, req, res, next) => {
-  console.error("🔥 Server Error:", err.stack);
-  res.status(500).json({
-    success: false,
-    message: "⚠️ Internal Server Error",
-    error: err.message,
-  });
-});
-
-// ✅ Start the server
+// ✅ Start Server
 app.listen(PORT, () => {
   console.log("===============================");
   console.log(`✅ RentXpress Server running on port ${PORT}`);
