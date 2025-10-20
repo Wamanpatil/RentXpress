@@ -1,6 +1,6 @@
-import Review from "../models/review.js"; // ✅ correct filename (lowercase)
-import Item from "../models/itemModel.js"; // ✅ lowercase file name
-import User from "../models/userModel.js"; // ✅ lowercase and consistent
+import Review from "../models/reviewModel.js"; // ✅ correct filename
+import Item from "../models/itemModel.js";
+import User from "../models/userModel.js";
 
 // ✅ Add Review
 export const addReview = async (req, res) => {
