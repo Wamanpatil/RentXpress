@@ -1,78 +1,67 @@
+// server/server.js
 import express from "express";
 import dotenv from "dotenv";
-import cors from "cors";
 import mongoose from "mongoose";
-import path from "path";
-import { fileURLToPath } from "url";
+import cors from "cors";
 import fileUpload from "express-fileupload";
-import cloudinary from "cloudinary";
 
-// ✅ Import Routes
+// Import routes
 import itemRoutes from "./routes/itemRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 5000;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-// ✅ CORS
+// ✅ Allow cross-origin (Frontend)
 app.use(
   cors({
-    origin: [
-      "https://rentxpress.netlify.app", // frontend
-      "https://rentxpress.onrender.com", // backend self-origin
-      "http://localhost:5173",           // dev
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: ["https://rentxpress.netlify.app", "http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
-app.options("*", cors());
 
-// ✅ Middleware
+// ✅ File Upload must come BEFORE JSON parser
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/", // 🟢 Render allows only /tmp for temporary files
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max file size
+  })
+);
+
+// ✅ JSON parsers (after fileUpload)
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(fileUpload({ useTempFiles: true }));
 
-// ✅ Cloudinary
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+// ✅ Basic test route
+app.get("/", (req, res) => {
+  res.json({ message: "🌐 RentXpress Backend Running Successfully!" });
 });
 
-// ✅ MongoDB Connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected Successfully"))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
-
-// ✅ API ROUTES — ensure all are mounted under /api/
+// ✅ API routes
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/auth", authRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/auth", authRoutes);
 
-// ✅ Health Route
-app.get("/api", (req, res) => {
-  res.status(200).json({ message: "🌐 RentXpress Backend Running Successfully!" });
-});
-
-// ✅ Catch-all for unknown routes
+// ✅ 404 Fallback
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route not found: ${req.originalUrl}` });
 });
 
-// ✅ Start Server
-app.listen(PORT, () => {
-  console.log("===============================");
-  console.log(`✅ RentXpress Server running on port ${PORT}`);
-  console.log(`🌐 API Base: https://rentxpress.onrender.com/api`);
-  console.log("===============================");
-});
+// ✅ MongoDB connection
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB connected successfully");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err);
+  });
+
+// ✅ Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
