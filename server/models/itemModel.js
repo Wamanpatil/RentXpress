@@ -3,21 +3,15 @@ import mongoose from "mongoose";
 const itemSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    category: {
-      type: String,
-      required: true,
-      enum: ["Equipment", "Vehicle", "Room"],
-    },
+    category: { type: String, required: true },
     price: { type: Number, required: true },
     location: { type: String, required: true },
-    description: { type: String },
-    image: { type: String },
+    description: { type: String, required: true },
+    image: { type: String, required: true },
     ownerName: { type: String, required: true },
-    ownerContact: { type: String },
+    ownerContact: { type: String, required: true },
   },
   { timestamps: true }
 );
 
-const Item = mongoose.model("Item", itemSchema);
-
-export default Item;
+export default mongoose.model("Item", itemSchema);

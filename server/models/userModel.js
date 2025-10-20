@@ -1,27 +1,24 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-// ✅ User Schema
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Name is required"],
+      required: true,
       trim: true,
-      minlength: [3, "Name must be at least 3 characters long"],
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: true,
       unique: true,
-      trim: true,
       lowercase: true,
-      match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
+      trim: true,
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters long"],
+      required: true,
+      minlength: 6,
     },
     role: {
       type: String,
@@ -40,11 +37,11 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// ✅ Compare entered password with hashed password
+// ✅ Compare password for login
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// ✅ Create and export model
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+
 export default User;
