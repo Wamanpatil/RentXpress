@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 import fileUpload from "express-fileupload";
 import cloudinary from "cloudinary";
 
-// Routes
+// ✅ Import Routes
 import itemRoutes from "./routes/itemRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -20,24 +20,29 @@ const PORT = process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ CORS
+// ✅ CORS Configuration (Fully Compatible with Render + Netlify)
 app.use(
   cors({
     origin: [
-      "https://rentxpress.netlify.app",
-      "http://localhost:5173",
+      "https://rentxpress.netlify.app", // your frontend
+      "https://rentxpress.onrender.com", // backend self-origin
+      "http://localhost:5173", // local dev
     ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
+// ✅ Handle CORS Preflight
+app.options("*", cors());
+
 // ✅ Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(fileUpload({ useTempFiles: true }));
 
-// ✅ Cloudinary Config
+// ✅ Cloudinary Configuration
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -50,17 +55,26 @@ mongoose
   .then(() => console.log("✅ MongoDB Connected Successfully"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// ✅ API Routes
+// ✅ Routes
 app.use("/api/items", itemRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reviews", reviewRoutes);
 
-// ✅ Default Route
+// ✅ Health Check / Keepalive Route
+app.get("/api", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "🚀 RentXpress API is active and running smoothly!",
+    uptime: process.uptime(),
+  });
+});
+
+// ✅ Default Home Route
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "🚀 RentXpress API running successfully",
+    message: "🌐 RentXpress Backend Live on Render",
   });
 });
 
@@ -76,6 +90,6 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log("===============================");
   console.log(`✅ RentXpress Server running on port ${PORT}`);
-  console.log(`🌐 Access API at: https://rentxpress.onrender.com`);
+  console.log(`🌐 API available at: https://rentxpress.onrender.com`);
   console.log("===============================");
 });
