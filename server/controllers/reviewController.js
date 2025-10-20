@@ -1,74 +1,47 @@
-// server/controllers/reviewController.js
-import Review from "../models/reviewModel.js";   // ✅ Match actual file name in your models folder
-import Item from "../models/itemModel.js";       // ✅ Match actual file name
-import User from "../models/userModel.js";       // ✅ Match actual file name
+import Review from "../models/reviewModel.js";
+import Item from "../models/itemModel.js";
+import User from "../models/userModel.js";
 
-/**
- * 📝 Add a new review
- */
+// ✅ Add Review
 export const addReview = async (req, res) => {
   try {
     const { itemId, userId, rating, comment } = req.body;
 
-    // ✅ Validation
     if (!itemId || !userId || !rating || !comment) {
-      return res
-        .status(400)
-        .json({ success: false, message: "⚠️ All fields are required." });
+      return res.status(400).json({ success: false, message: "⚠️ All fields are required." });
     }
 
-    // ✅ Ensure referenced item & user exist
     const item = await Item.findById(itemId);
     const user = await User.findById(userId);
-
     if (!item || !user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "❌ Item or user not found." });
+      return res.status(404).json({ success: false, message: "❌ Invalid item or user." });
     }
 
-    // ✅ Create and save review
-    const review = new Review({
-      item: itemId,
-      user: userId,
-      rating,
-      comment,
-    });
-
+    const review = new Review({ item: itemId, user: userId, rating, comment });
     await review.save();
 
-    res
-      .status(201)
-      .json({ success: true, message: "✅ Review added successfully!", review });
-  } catch (err) {
-    console.error("❌ Add review error:", err);
-    res.status(500).json({
-      success: false,
-      message: "🚫 Failed to add review.",
-      error: err.message,
+    res.status(201).json({
+      success: true,
+      message: "✅ Review added successfully!",
+      review,
     });
+  } catch (err) {
+    console.error("❌ Add Review Error:", err);
+    res.status(500).json({ success: false, message: "🚫 Failed to add review.", error: err.message });
   }
 };
 
-/**
- * 📦 Get all reviews for a specific item
- */
+// ✅ Get Reviews for an Item
 export const getReviewsByItem = async (req, res) => {
   try {
     const { itemId } = req.params;
-
-    // ✅ Fetch and populate with user info
     const reviews = await Review.find({ item: itemId })
       .populate("user", "name email")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, reviews });
   } catch (err) {
-    console.error("❌ Get reviews error:", err);
-    res.status(500).json({
-      success: false,
-      message: "🚫 Failed to fetch reviews.",
-      error: err.message,
-    });
+    console.error("❌ Get Reviews Error:", err);
+    res.status(500).json({ success: false, message: "🚫 Failed to fetch reviews.", error: err.message });
   }
 };
