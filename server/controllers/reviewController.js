@@ -1,32 +1,67 @@
-import Review from "../models/reviewModel.js";
-import Item from "../models/Item.js";
- // ✅ No curly braces
+import Review from "../models/review.js"; // ✅ correct filename (lowercase)
+import Item from "../models/itemModel.js"; // ✅ lowercase file name
+import User from "../models/userModel.js"; // ✅ lowercase and consistent
 
-
-
-// ✅ Add a review
+// ✅ Add Review
 export const addReview = async (req, res) => {
   try {
-    const { itemId, user, rating, comment } = req.body;
+    const { itemId, userId, rating, comment } = req.body;
 
-    if (!itemId || !user || !rating) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!itemId || !userId || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "⚠️ All fields are required.",
+      });
     }
 
-    const review = await Review.create({ item: itemId, user, rating, comment });
-    res.status(201).json({ message: "Review added successfully", review });
+    const item = await Item.findById(itemId);
+    const user = await User.findById(userId);
+
+    if (!item || !user) {
+      return res.status(404).json({
+        success: false,
+        message: "❌ Item or User not found.",
+      });
+    }
+
+    const review = new Review({
+      item: itemId,
+      user: userId,
+      rating,
+      comment,
+    });
+
+    await review.save();
+
+    res.status(201).json({
+      success: true,
+      message: "✅ Review added successfully.",
+      review,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Failed to add review", error: error.message });
+    console.error("❌ Add Review Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "🚫 Failed to add review.",
+      error: error.message,
+    });
   }
 };
 
-// ✅ Get reviews for an item
+// ✅ Get Reviews by Item
 export const getReviewsByItem = async (req, res) => {
   try {
-    const { itemId } = req.params;
-    const reviews = await Review.find({ item: itemId }).sort({ createdAt: -1 });
+    const reviews = await Review.find({ item: req.params.itemId })
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+
     res.status(200).json({ success: true, reviews });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching reviews", error: error.message });
+    console.error("❌ Fetch Reviews Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "🚫 Failed to fetch reviews.",
+      error: error.message,
+    });
   }
 };
