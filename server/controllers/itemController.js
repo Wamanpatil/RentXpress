@@ -1,49 +1,65 @@
-import { Item } from "../models/itemModel.js";
-import cloudinary from "../config/cloudinary.js";
-import fs from "fs";
+import Item from "../models/Item.js";
+import cloudinary from "cloudinary";
 
-// ✅ Create new item (for owners)
-export const createItem = async (req, res) => {
+export const addItem = async (req, res) => {
   try {
-    let imageUrl = "";
+    const {
+      name,
+      category,
+      price,
+      location,
+      description,
+      ownerName,
+      ownerContact,
+    } = req.body;
 
-    // ✅ Upload image to Cloudinary if provided
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "rentxpress_items",
-      });
-      imageUrl = result.secure_url;
-      fs.unlinkSync(req.file.path); // delete local temp file
+    if (!req.files || !req.files.image) {
+      return res.status(400).json({ success: false, message: "No image uploaded" });
     }
 
-    console.log("📥 Incoming form data:", req.body);
+    // Upload image to Cloudinary
+    const result = await cloudinary.v2.uploader.upload(req.files.image.tempFilePath, {
+      folder: "rentxpress_items",
+    });
 
-    // ✅ Create item using correct field names
     const newItem = new Item({
-      name: req.body.name,
-      category: req.body.category,
-      price: req.body.price,
-      location: req.body.location,
-      description: req.body.description,
-      ownerName: req.body.ownerName, // ✅ exact schema match
-      ownerContact: req.body.ownerContact || "",
-      image: imageUrl,
+      name,
+      category,
+      price,
+      location,
+      description,
+      ownerName,
+      ownerContact,
+      image: result.secure_url,
     });
 
     await newItem.save();
-    console.log("✅ Item saved successfully:", newItem);
 
-    res.status(201).json({
-      success: true,
-      message: "Item added successfully!",
-      item: newItem,
-    });
+    res.json({ success: true, message: "✅ Item added successfully", item: newItem });
   } catch (error) {
-    console.error("❌ Error adding item:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to add item",
-      error: error.message,
-    });
+    console.error("❌ Add item error:", error);
+    res.status(500).json({ success: false, message: "Failed to add item" });
+  }
+};
+
+// Get all items
+export const getItems = async (req, res) => {
+  try {
+    const items = await Item.find().sort({ createdAt: -1 });
+    res.json({ success: true, items });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch items" });
+  }
+};
+
+// Delete item
+export const deleteItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Item.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ success: false, message: "Item not found" });
+    res.json({ success: true, message: "Item deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error deleting item" });
   }
 };
