@@ -1,27 +1,18 @@
 import Item from "../models/Item.js";
 import cloudinary from "cloudinary";
 
-export const addItem = async (req, res) => {
+// ✅ Add Item Controller
+export const addItem = async (reqBody) => {
   try {
-    const {
-      name,
-      category,
-      price,
-      location,
-      description,
-      ownerName,
-      ownerContact,
-    } = req.body;
+    console.log("🧩 Adding new item:", reqBody);
 
-    if (!req.files || !req.files.image) {
-      return res.status(400).json({ success: false, message: "No image uploaded" });
+    // ✅ Validate required fields
+    const { name, category, price, location, description, ownerName, ownerContact, image } = reqBody;
+    if (!name || !category || !price || !location || !description || !ownerName) {
+      throw new Error("Missing required fields");
     }
 
-    // Upload image to Cloudinary
-    const result = await cloudinary.v2.uploader.upload(req.files.image.tempFilePath, {
-      folder: "rentxpress_items",
-    });
-
+    // ✅ Create and save item in MongoDB
     const newItem = new Item({
       name,
       category,
@@ -30,36 +21,57 @@ export const addItem = async (req, res) => {
       description,
       ownerName,
       ownerContact,
-      image: result.secure_url,
+      image: image || "https://cdn-icons-png.flaticon.com/512/1048/1048953.png", // fallback
     });
 
-    await newItem.save();
-
-    res.json({ success: true, message: "✅ Item added successfully", item: newItem });
+    const savedItem = await newItem.save();
+    console.log("✅ Item saved successfully:", savedItem._id);
+    return savedItem;
   } catch (error) {
-    console.error("❌ Add item error:", error);
-    res.status(500).json({ success: false, message: "Failed to add item" });
+    console.error("❌ Error in addItem Controller:", error.message);
+    throw new Error("Failed to add item.");
   }
 };
 
-// Get all items
-export const getItems = async (req, res) => {
+// ✅ Get All Items
+export const getItems = async () => {
   try {
     const items = await Item.find().sort({ createdAt: -1 });
-    res.json({ success: true, items });
+    console.log(`📦 Found ${items.length} items`);
+    return items;
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to fetch items" });
+    console.error("❌ Error fetching items:", error.message);
+    throw new Error("Failed to fetch items.");
   }
 };
 
-// Delete item
-export const deleteItem = async (req, res) => {
+// ✅ Delete Item
+export const deleteItem = async (id) => {
   try {
-    const { id } = req.params;
-    const deleted = await Item.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ success: false, message: "Item not found" });
-    res.json({ success: true, message: "Item deleted successfully" });
+    console.log("🗑️ Deleting item with ID:", id);
+
+    const item = await Item.findById(id);
+    if (!item) {
+      console.warn("⚠️ Item not found:", id);
+      return null;
+    }
+
+    // ✅ Delete image from Cloudinary if exists
+    if (item.image && item.image.includes("cloudinary.com")) {
+      const publicId = item.image.split("/").pop().split(".")[0];
+      try {
+        await cloudinary.v2.uploader.destroy(`rentxpress/items/${publicId}`);
+        console.log("🧹 Cloudinary image deleted:", publicId);
+      } catch (cloudErr) {
+        console.warn("⚠️ Cloudinary image delete failed:", cloudErr.message);
+      }
+    }
+
+    await Item.findByIdAndDelete(id);
+    console.log("✅ Item deleted successfully:", id);
+    return true;
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error deleting item" });
+    console.error("❌ Error deleting item:", error.message);
+    throw new Error("Failed to delete item.");
   }
 };
