@@ -5,14 +5,14 @@ import { addReview, getReviewsByItem } from "../controllers/reviewController.js"
 const router = express.Router();
 
 /**
- * 📝 Add Review (POST)
- * Endpoint: /api/reviews/add
+ * ✅ Add new review
+ * POST /api/reviews/add
  */
 router.post("/add", addReview);
 
 /**
- * 📦 Get Reviews for an Item (GET)
- * Endpoint: /api/reviews/item/:itemId
+ * ✅ Get reviews for a specific item
+ * GET /api/reviews/item/:itemId
  */
 router.get("/item/:itemId", getReviewsByItem);
 
