@@ -1,5 +1,6 @@
 import Review from "../models/reviewModel.js";
-import Item from "../models/itemModel.js";  // ✅ No curly braces
+import Item from "../models/Item.js";
+ // ✅ No curly braces
 
 
 
