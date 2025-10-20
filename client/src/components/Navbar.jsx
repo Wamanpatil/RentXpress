@@ -3,42 +3,50 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [userRole, setUserRole] = useState(null);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Detect logged-in user from localStorage (if JWT stored)
+  // ✅ Sync user info whenever route or storage changes
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      setUserRole(parsed.role || "user");
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        setUser(null);
+      }
     } else {
-      setUserRole(null);
+      setUser(null);
     }
-  }, [location]); // refresh navbar role when route changes
+  }, [location]);
 
   // ✅ Logout function
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    setUserRole(null);
+    setUser(null);
     navigate("/login");
   };
 
-  // ✅ Helper function to highlight active links
+  // ✅ Helper to highlight active link
   const isActive = (path) =>
-    location.pathname === path ? "text-yellow-300 font-semibold" : "hover:text-yellow-300";
+    location.pathname === path
+      ? "text-yellow-300 font-semibold"
+      : "hover:text-yellow-300";
 
   return (
     <nav className="bg-blue-700 text-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center p-4">
         {/* ✅ Logo */}
-        <Link to="/" className="text-2xl font-bold tracking-wide">
+        <Link
+          to="/"
+          className="text-2xl font-bold tracking-wide hover:text-yellow-300 transition"
+        >
           RentXpress
         </Link>
 
-        {/* ✅ Desktop Links */}
+        {/* ✅ Desktop Navigation */}
         <div className="hidden md:flex space-x-6">
           <Link to="/" className={isActive("/")}>
             Home
@@ -56,29 +64,40 @@ export default function Navbar() {
             Bookings
           </Link>
 
-          {/* ✅ Owner Add Item */}
-          <Link to="/itemmanager" className="hover:text-green-300 font-medium text-green-300">
-            + Add Item
-          </Link>
+          {/* ✅ Add Item always visible for logged-in users */}
+          {user && (
+            <Link
+              to="/itemmanager"
+              className="text-green-300 hover:text-green-400 font-medium"
+            >
+              + Add Item
+            </Link>
+          )}
 
-          {/* ✅ Show Admin Dashboard only if role = admin */}
-          {userRole === "admin" && (
-            <Link to="/admin" className="hover:text-red-300 font-medium text-red-300">
+          {/* ✅ Admin Access */}
+          {user?.role === "admin" && (
+            <Link
+              to="/admin"
+              className="text-red-300 hover:text-red-400 font-medium"
+            >
               Admin
             </Link>
           )}
         </div>
 
-        {/* ✅ Auth Buttons / Logout */}
-        <div className="hidden md:flex space-x-4">
-          {userRole ? (
+        {/* ✅ Auth Buttons */}
+        <div className="hidden md:flex space-x-4 items-center">
+          {user ? (
             <>
-              <span className="text-sm opacity-80 self-center">
-                👋 {userRole === "admin" ? "Admin" : "User"}
+              <span className="text-sm opacity-80">
+                👋 {user.name || "User"}{" "}
+                {user.role === "admin" && (
+                  <span className="text-yellow-300">(Admin)</span>
+                )}
               </span>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-4 py-1 rounded-lg font-medium hover:bg-red-600"
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-lg font-medium transition"
               >
                 Logout
               </button>
@@ -87,13 +106,13 @@ export default function Navbar() {
             <>
               <Link
                 to="/login"
-                className="bg-white text-blue-700 px-4 py-1 rounded-lg font-medium hover:bg-gray-200"
+                className="bg-white text-blue-700 px-4 py-1 rounded-lg font-medium hover:bg-gray-200 transition"
               >
                 Login
               </Link>
               <Link
                 to="/register"
-                className="bg-yellow-400 text-blue-800 px-4 py-1 rounded-lg font-medium hover:bg-yellow-300"
+                className="bg-yellow-400 text-blue-800 px-4 py-1 rounded-lg font-medium hover:bg-yellow-300 transition"
               >
                 Register
               </Link>
@@ -101,7 +120,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* ✅ Mobile Menu Button */}
+        {/* ✅ Mobile Menu Toggle */}
         <button
           className="md:hidden flex flex-col space-y-1 focus:outline-none"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -112,30 +131,52 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* ✅ Mobile Dropdown Menu */}
+      {/* ✅ Mobile Dropdown */}
       {menuOpen && (
         <div className="md:hidden bg-blue-600 text-white px-6 py-4 space-y-4">
           <Link to="/" onClick={() => setMenuOpen(false)} className={isActive("/")}>
             Home
           </Link>
-          <Link to="/equipment" onClick={() => setMenuOpen(false)} className={isActive("/equipment")}>
+          <Link
+            to="/equipment"
+            onClick={() => setMenuOpen(false)}
+            className={isActive("/equipment")}
+          >
             Equipment
           </Link>
-          <Link to="/vehicles" onClick={() => setMenuOpen(false)} className={isActive("/vehicles")}>
+          <Link
+            to="/vehicles"
+            onClick={() => setMenuOpen(false)}
+            className={isActive("/vehicles")}
+          >
             Vehicles
           </Link>
-          <Link to="/rooms" onClick={() => setMenuOpen(false)} className={isActive("/rooms")}>
+          <Link
+            to="/rooms"
+            onClick={() => setMenuOpen(false)}
+            className={isActive("/rooms")}
+          >
             Rooms
           </Link>
-          <Link to="/bookings" onClick={() => setMenuOpen(false)} className={isActive("/bookings")}>
+          <Link
+            to="/bookings"
+            onClick={() => setMenuOpen(false)}
+            className={isActive("/bookings")}
+          >
             Bookings
           </Link>
-          <Link to="/itemmanager" onClick={() => setMenuOpen(false)} className="block hover:text-green-300">
-            + Add Item
-          </Link>
 
-          {/* ✅ Admin Link (Visible only for admin) */}
-          {userRole === "admin" && (
+          {user && (
+            <Link
+              to="/itemmanager"
+              onClick={() => setMenuOpen(false)}
+              className="block hover:text-green-300"
+            >
+              + Add Item
+            </Link>
+          )}
+
+          {user?.role === "admin" && (
             <Link
               to="/admin"
               onClick={() => setMenuOpen(false)}
@@ -145,15 +186,14 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* ✅ Mobile Auth / Logout Buttons */}
           <div className="flex flex-col space-y-2 pt-2 border-t border-blue-500">
-            {userRole ? (
+            {user ? (
               <button
                 onClick={() => {
                   handleLogout();
                   setMenuOpen(false);
                 }}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600"
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition"
               >
                 Logout
               </button>

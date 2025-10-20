@@ -1,106 +1,138 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { getAllItems, createBooking } from "../api";
 
-export default function Bookings() {
-  const [bookings, setBookings] = useState([]);
+export default function BookNow() {
+  const { id } = useParams(); // itemId
+  const navigate = useNavigate();
+  const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [message, setMessage] = useState("");
 
+  // ✅ Load item details by ID
   useEffect(() => {
-    const fetchBookings = async () => {
+    const fetchItem = async () => {
       try {
-        console.log("📡 Fetching bookings from backend...");
-        const res = await axios.get("http://localhost:5000/api/bookings");
-        console.log("✅ Bookings Response:", res.data);
-
-        if (res.data && res.data.success) {
-          setBookings(res.data.bookings || []);
-        } else {
-          setError("Failed to fetch bookings from server.");
-        }
+        const res = await getAllItems();
+        const found = res.items.find((i) => i._id === id);
+        setItem(found);
       } catch (err) {
-        console.error("❌ Error fetching bookings:", err);
-        setError("Failed to fetch bookings from server.");
+        console.error("❌ Failed to fetch item:", err.message);
+        setMessage("⚠️ Failed to load item details.");
       } finally {
         setLoading(false);
       }
     };
+    fetchItem();
+  }, [id]);
 
-    fetchBookings();
-  }, []);
+  // ✅ Calculate total price based on date range
+  useEffect(() => {
+    if (item && startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const days = (end - start) / (1000 * 60 * 60 * 24);
+      if (days > 0) {
+        setTotalPrice(days * item.price);
+      } else {
+        setTotalPrice(0);
+      }
+    }
+  }, [startDate, endDate, item]);
 
-  if (loading) {
+  // ✅ Handle booking submission
+  const handleBooking = async (e) => {
+    e.preventDefault();
+    setMessage("");
+
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (!storedUser) {
+      setMessage("⚠️ Please log in before booking.");
+      return navigate("/login");
+    }
+
+    try {
+      const bookingData = {
+        itemId: item._id,
+        userId: storedUser._id,
+        startDate,
+        endDate,
+        totalPrice,
+      };
+
+      const res = await createBooking(bookingData);
+      if (res.success) {
+        setMessage("✅ Booking successful!");
+        setTimeout(() => navigate("/bookings"), 2000);
+      } else {
+        setMessage("⚠️ Booking failed, please try again.");
+      }
+    } catch (err) {
+      console.error("❌ Booking error:", err.message);
+      setMessage("🚫 Server error, please try again later.");
+    }
+  };
+
+  if (loading) return <p className="text-center mt-8">⏳ Loading item...</p>;
+
+  if (!item)
     return (
-      <div className="flex justify-center items-center h-screen text-xl text-gray-600">
-        ⏳ Loading bookings...
-      </div>
+      <p className="text-center text-red-600 mt-8">⚠️ Item not found.</p>
     );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen text-red-600 text-xl">
-        ⚠️ {error}
-      </div>
-    );
-  }
-
-  if (bookings.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-screen text-gray-600 text-xl">
-        📝 No bookings found.
-      </div>
-    );
-  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-center text-3xl font-bold text-blue-700 mb-6">
-        📅 Bookings Dashboard
+    <div className="max-w-lg mx-auto mt-10 bg-white shadow-lg rounded-2xl p-6">
+      <h1 className="text-2xl font-semibold mb-4 text-blue-700 text-center">
+        Book {item.name}
       </h1>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 shadow-md rounded-lg">
-          <thead className="bg-blue-100 text-gray-800">
-            <tr>
-              <th className="py-3 px-4 border">#</th>
-              <th className="py-3 px-4 border">Item Name</th>
-              <th className="py-3 px-4 border">Category</th>
-              <th className="py-3 px-4 border">User</th>
-              <th className="py-3 px-4 border">Start Date</th>
-              <th className="py-3 px-4 border">End Date</th>
-              <th className="py-3 px-4 border">Total Price</th>
-              <th className="py-3 px-4 border">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings.map((booking, index) => (
-              <tr key={booking._id} className="text-center hover:bg-gray-50">
-                <td className="py-2 px-4 border">{index + 1}</td>
-                <td className="py-2 px-4 border">
-                  {booking.item?.name || "Unknown Item"}
-                </td>
-                <td className="py-2 px-4 border">
-                  {booking.item?.category || "-"}
-                </td>
-                <td className="py-2 px-4 border">
-                  {booking.user?.name || "Guest"}
-                </td>
-                <td className="py-2 px-4 border">
-                  {new Date(booking.startDate).toLocaleDateString()}
-                </td>
-                <td className="py-2 px-4 border">
-                  {new Date(booking.endDate).toLocaleDateString()}
-                </td>
-                <td className="py-2 px-4 border text-green-600 font-semibold">
-                  ₹{booking.totalPrice}
-                </td>
-                <td className="py-2 px-4 border">{booking.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mb-4 text-gray-700">
+        <p><strong>Category:</strong> {item.category}</p>
+        <p><strong>Price per day:</strong> ₹{item.price}</p>
+        <p><strong>Location:</strong> {item.location}</p>
       </div>
+
+      <form onSubmit={handleBooking} className="space-y-4">
+        <div>
+          <label className="block mb-1 font-medium">Start Date:</label>
+          <input
+            type="date"
+            className="border rounded-lg w-full p-2"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 font-medium">End Date:</label>
+          <input
+            type="date"
+            className="border rounded-lg w-full p-2"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <p className="font-semibold text-blue-700">
+            Total Price: ₹{totalPrice}
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          className="bg-blue-700 hover:bg-blue-800 text-white font-medium px-6 py-2 rounded-lg w-full"
+        >
+          Confirm Booking
+        </button>
+      </form>
+
+      {message && <p className="text-center mt-4 text-gray-800">{message}</p>}
     </div>
   );
 }

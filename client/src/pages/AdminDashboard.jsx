@@ -1,207 +1,260 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getAllItems, deleteItem, getAllBookings } from "../api";
 import axios from "axios";
 
 export default function AdminDashboard() {
   const [items, setItems] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [message, setMessage] = useState("");
 
-  // ✅ Fetch Admin Data (Items + Bookings)
-  const fetchAdminData = async () => {
+  const API_BASE = "https://rentxpress.onrender.com/api";
+
+  // ✅ Fetch all items
+  const fetchItems = async () => {
     try {
-      const [itemsRes, bookingsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/items"),
-        axios.get("http://localhost:5000/api/bookings"),
-      ]);
-
-      setItems(itemsRes.data.items || []);
-      setBookings(bookingsRes.data.bookings || []);
+      const res = await getAllItems();
+      if (res.success) setItems(res.items);
     } catch (err) {
-      console.error("❌ Failed to fetch admin data:", err);
-      alert("Failed to load admin data. Please check your server.");
-    } finally {
-      setLoading(false);
+      console.error("❌ Failed to fetch items:", err.message);
     }
   };
 
+  // ✅ Fetch all bookings
+  const fetchBookings = async () => {
+    try {
+      const res = await getAllBookings();
+      if (res.success) setBookings(res.bookings);
+    } catch (err) {
+      console.error("❌ Failed to fetch bookings:", err.message);
+    }
+  };
+
+  // ✅ Fetch all users (for stats)
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/auth/users`);
+      if (res.data.success) setUsers(res.data.users);
+    } catch (err) {
+      console.error("❌ Failed to fetch users:", err.message);
+    }
+  };
+
+  // ✅ Delete item
+  const handleDeleteItem = async (id) => {
+    if (!window.confirm("⚠️ Are you sure you want to delete this item?")) return;
+    try {
+      await deleteItem(id);
+      setMessage("✅ Item deleted successfully.");
+      fetchItems();
+    } catch (err) {
+      console.error("❌ Error deleting item:", err.message);
+      setMessage("🚫 Failed to delete item.");
+    }
+  };
+
+  // ✅ Delete booking
+  const handleDeleteBooking = async (id) => {
+    if (!window.confirm("⚠️ Delete this booking?")) return;
+    try {
+      await axios.delete(`${API_BASE}/bookings/${id}`);
+      setMessage("✅ Booking deleted successfully.");
+      fetchBookings();
+    } catch (err) {
+      console.error("❌ Error deleting booking:", err.message);
+      setMessage("🚫 Failed to delete booking.");
+    }
+  };
+
+  // ✅ Initial data load
   useEffect(() => {
-    fetchAdminData();
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([fetchItems(), fetchBookings(), fetchUsers()]);
+      setLoading(false);
+    };
+    loadAll();
   }, []);
 
-  // ✅ Delete Item Function
-  const handleDeleteItem = async (id) => {
-    if (!window.confirm("🗑️ Are you sure you want to delete this item?")) return;
-    try {
-      const res = await axios.delete(`http://localhost:5000/api/items/${id}`);
-      if (res.data.success) {
-        alert("✅ Item deleted successfully!");
-        setItems((prev) => prev.filter((i) => i._id !== id)); // update instantly
-      } else {
-        alert("❌ Failed to delete item.");
-      }
-    } catch (err) {
-      console.error("Delete error:", err);
-      alert("Server error while deleting item.");
-    }
-  };
-
-  // ✅ Delete Booking Function
-  const handleDeleteBooking = async (id) => {
-    if (!window.confirm("🗑️ Are you sure you want to delete this booking?")) return;
-    try {
-      const res = await axios.delete(`http://localhost:5000/api/bookings/${id}`);
-      if (res.data.success) {
-        alert("✅ Booking deleted successfully!");
-        setBookings((prev) => prev.filter((b) => b._id !== id)); // instant refresh
-      } else {
-        alert("❌ Failed to delete booking.");
-      }
-    } catch (err) {
-      console.error("Delete error:", err);
-      alert("Server error while deleting booking.");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-blue-600 text-xl">
-        ⏳ Loading Admin Dashboard...
-      </div>
-    );
-  }
+  if (loading)
+    return <p className="text-center mt-10 text-lg">⏳ Loading admin data...</p>;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* ✅ Header */}
-      <h1 className="text-3xl font-bold text-center text-blue-700 mb-8">
-        🧑‍💼 RentXpress Admin Dashboard
+    <div className="max-w-7xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-xl">
+      <h1 className="text-3xl font-bold text-blue-700 text-center mb-6">
+        Admin Dashboard
       </h1>
 
-      {/* ✅ Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white shadow-md rounded-lg p-6 text-center border-l-4 border-blue-600">
-          <h2 className="text-3xl font-bold text-blue-600">{items.length}</h2>
-          <p className="text-gray-500">Total Items Listed</p>
+      {message && (
+        <div className="bg-yellow-100 text-yellow-700 p-2 text-center rounded-md mb-4">
+          {message}
         </div>
-        <div className="bg-white shadow-md rounded-lg p-6 text-center border-l-4 border-green-600">
-          <h2 className="text-3xl font-bold text-green-600">{bookings.length}</h2>
-          <p className="text-gray-500">Total Bookings</p>
-        </div>
-        <div className="bg-white shadow-md rounded-lg p-6 text-center border-l-4 border-yellow-500">
-          <h2 className="text-3xl font-bold text-yellow-600">
-            {[...new Set(items.map((i) => i.ownerName))].length}
-          </h2>
-          <p className="text-gray-500">Total Owners</p>
-        </div>
+      )}
+
+      {/* ✅ Navigation Tabs */}
+      <div className="flex justify-center gap-4 mb-6">
+        {["overview", "items", "bookings", "users"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-5 py-2 rounded-lg font-medium ${
+              activeTab === tab
+                ? "bg-blue-700 text-white"
+                : "bg-gray-200 hover:bg-gray-300"
+            }`}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </div>
 
-      {/* ✅ Items Section */}
-      <section className="bg-white shadow-md rounded-lg p-6 mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-blue-600">
-            📦 All Listed Items
-          </h2>
-          <span className="text-sm text-gray-500">
-            Manage all equipment, vehicles, and rooms.
-          </span>
-        </div>
-
-        {items.length === 0 ? (
-          <p className="text-center text-gray-500 py-4">No items found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-blue-100 text-blue-700">
-                  <th className="p-3 border">Item Name</th>
-                  <th className="p-3 border">Category</th>
-                  <th className="p-3 border">Price (₹)</th>
-                  <th className="p-3 border">Owner</th>
-                  <th className="p-3 border">Contact</th>
-                  <th className="p-3 border">Location</th>
-                  <th className="p-3 border">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item._id} className="hover:bg-gray-50">
-                    <td className="p-3 border">{item.name}</td>
-                    <td className="p-3 border capitalize">{item.category}</td>
-                    <td className="p-3 border">₹{item.price}</td>
-                    <td className="p-3 border">{item.ownerName || "N/A"}</td>
-                    <td className="p-3 border">{item.ownerContact || "—"}</td>
-                    <td className="p-3 border">{item.location}</td>
-                    <td className="p-3 border text-center">
-                      <button
-                        onClick={() => handleDeleteItem(item._id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* ✅ Overview Section */}
+      {activeTab === "overview" && (
+        <div className="grid md:grid-cols-3 gap-6 text-center">
+          <div className="bg-blue-100 p-5 rounded-xl shadow">
+            <h2 className="text-xl font-semibold text-blue-800">
+              Total Items
+            </h2>
+            <p className="text-2xl font-bold text-blue-900 mt-2">
+              {items.length}
+            </p>
           </div>
-        )}
-      </section>
+
+          <div className="bg-green-100 p-5 rounded-xl shadow">
+            <h2 className="text-xl font-semibold text-green-800">
+              Total Bookings
+            </h2>
+            <p className="text-2xl font-bold text-green-900 mt-2">
+              {bookings.length}
+            </p>
+          </div>
+
+          <div className="bg-purple-100 p-5 rounded-xl shadow">
+            <h2 className="text-xl font-semibold text-purple-800">
+              Total Users
+            </h2>
+            <p className="text-2xl font-bold text-purple-900 mt-2">
+              {users.length}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Items Section */}
+      {activeTab === "items" && (
+        <div>
+          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+            Manage Items
+          </h2>
+          {items.length === 0 ? (
+            <p>No items found.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {items.map((item) => (
+                <div
+                  key={item._id}
+                  className="border rounded-lg shadow p-3 hover:shadow-lg transition"
+                >
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-40 object-cover rounded-md mb-2"
+                  />
+                  <h3 className="text-lg font-bold text-blue-700">{item.name}</h3>
+                  <p>Category: {item.category}</p>
+                  <p>Price: ₹{item.price}</p>
+                  <button
+                    onClick={() => handleDeleteItem(item._id)}
+                    className="bg-red-500 text-white px-4 py-1 rounded-md mt-2 hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ✅ Bookings Section */}
-      <section className="bg-white shadow-md rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-green-600">
-            🧾 All User Bookings
+      {activeTab === "bookings" && (
+        <div>
+          <h2 className="text-2xl font-semibold text-green-800 mb-4">
+            Manage Bookings
           </h2>
-          <span className="text-sm text-gray-500">
-            Monitor and manage all active bookings.
-          </span>
+          {bookings.length === 0 ? (
+            <p>No bookings found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border text-sm">
+                <thead className="bg-green-100">
+                  <tr>
+                    <th className="border p-2">User</th>
+                    <th className="border p-2">Item</th>
+                    <th className="border p-2">Duration</th>
+                    <th className="border p-2">Price</th>
+                    <th className="border p-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookings.map((b) => (
+                    <tr key={b._id} className="hover:bg-gray-100">
+                      <td className="border p-2">{b.user?.name || "N/A"}</td>
+                      <td className="border p-2">{b.item?.name || "N/A"}</td>
+                      <td className="border p-2">
+                        {new Date(b.startDate).toLocaleDateString()} →{" "}
+                        {new Date(b.endDate).toLocaleDateString()}
+                      </td>
+                      <td className="border p-2">₹{b.totalPrice}</td>
+                      <td className="border p-2 text-center">
+                        <button
+                          onClick={() => handleDeleteBooking(b._id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+      )}
 
-        {bookings.length === 0 ? (
-          <p className="text-center text-gray-500 py-4">No bookings found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-green-100 text-green-700">
-                  <th className="p-3 border">Item</th>
-                  <th className="p-3 border">User</th>
-                  <th className="p-3 border">From</th>
-                  <th className="p-3 border">To</th>
-                  <th className="p-3 border">Total Price (₹)</th>
-                  <th className="p-3 border">Action</th>
+      {/* ✅ Users Section */}
+      {activeTab === "users" && (
+        <div>
+          <h2 className="text-2xl font-semibold text-purple-800 mb-4">
+            Registered Users
+          </h2>
+          {users.length === 0 ? (
+            <p>No users registered.</p>
+          ) : (
+            <table className="w-full border text-sm">
+              <thead className="bg-purple-100">
+                <tr>
+                  <th className="border p-2">Name</th>
+                  <th className="border p-2">Email</th>
+                  <th className="border p-2">Role</th>
                 </tr>
               </thead>
               <tbody>
-                {bookings.map((b) => (
-                  <tr key={b._id} className="hover:bg-gray-50">
-                    <td className="p-3 border">{b.item?.name || "—"}</td>
-                    <td className="p-3 border">{b.user?.name || "Guest"}</td>
-                    <td className="p-3 border">
-                      {new Date(b.startDate).toLocaleDateString()}
-                    </td>
-                    <td className="p-3 border">
-                      {new Date(b.endDate).toLocaleDateString()}
-                    </td>
-                    <td className="p-3 border font-semibold text-green-700">
-                      ₹{b.totalPrice}
-                    </td>
-                    <td className="p-3 border text-center">
-                      <button
-                        onClick={() => handleDeleteBooking(b._id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Delete
-                      </button>
-                    </td>
+                {users.map((user) => (
+                  <tr key={user._id} className="hover:bg-gray-100">
+                    <td className="border p-2">{user.name}</td>
+                    <td className="border p-2">{user.email}</td>
+                    <td className="border p-2 capitalize">{user.role}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-      </section>
+          )}
+        </div>
+      )}
     </div>
   );
 }

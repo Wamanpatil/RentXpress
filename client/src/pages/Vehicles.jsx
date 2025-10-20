@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../api";
 import ReviewSection from "../components/ReviewSection";
 
 export default function Vehicles() {
@@ -11,7 +11,7 @@ export default function Vehicles() {
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/items");
+        const res = await API.get("/items");
         const allItems = res.data.items || [];
         const filtered = allItems.filter(
           (item) => item.category?.toLowerCase().trim() === "vehicle"
@@ -48,26 +48,20 @@ export default function Vehicles() {
       totalPrice,
     };
 
-    console.log("📦 Booking Data Sending:", bookingData);
-
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/bookings",
-        bookingData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await API.post("/bookings", bookingData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.data.success) alert("✅ Booking Successful!");
       else alert("❌ " + (res.data.message || "Booking Failed"));
     } catch (err) {
-      console.error("❌ Booking Failed:", err.response?.data || err.message);
+      console.error("❌ Booking Failed:", err);
       alert("❌ Booking Failed. Try again.");
     }
   };
 
-  if (loading)
-    return <div className="text-center p-10">⏳ Loading vehicles...</div>;
-  if (error)
-    return <div className="text-center p-10 text-red-600">⚠️ {error}</div>;
+  if (loading) return <div className="text-center p-10">⏳ Loading vehicles...</div>;
+  if (error) return <div className="text-center p-10 text-red-600">⚠️ {error}</div>;
   if (!vehicles.length)
     return <div className="text-center p-10 text-gray-600">⚠️ No vehicles found.</div>;
 

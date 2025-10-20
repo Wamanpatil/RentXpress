@@ -1,105 +1,66 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { getUserBookings } from "../api";
 
 export default function Bookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        console.log("📡 Fetching bookings from backend...");
-        const res = await axios.get("http://localhost:5000/api/bookings");
-        console.log("✅ Bookings Response:", res.data);
-
-        if (res.data && res.data.success) {
-          setBookings(res.data.bookings || []);
-        } else {
-          setError("Failed to fetch bookings from server.");
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) {
+          setMessage("⚠️ Please log in to view your bookings.");
+          return;
         }
+        const res = await getUserBookings(user._id);
+        if (res.success) setBookings(res.bookings);
+        else setMessage("⚠️ Failed to load bookings.");
       } catch (err) {
-        console.error("❌ Error fetching bookings:", err);
-        setError("Failed to fetch bookings from server.");
+        console.error("❌ Error fetching bookings:", err.message);
+        setMessage("🚫 Unable to fetch bookings right now.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchBookings();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen text-xl text-gray-600">
-        ⏳ Loading bookings...
-      </div>
-    );
-  }
+  if (loading) return <p className="text-center mt-8">⏳ Loading bookings...</p>;
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen text-red-600 text-xl">
-        ⚠️ {error}
-      </div>
-    );
-  }
+  if (message) return <p className="text-center mt-8 text-red-600">{message}</p>;
 
-  if (bookings.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-screen text-gray-600 text-xl">
-        📝 No bookings found.
-      </div>
-    );
-  }
+  if (bookings.length === 0)
+    return <p className="text-center mt-8">📭 No bookings found.</p>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-center text-3xl font-bold text-blue-700 mb-6">
-        📅 Bookings Dashboard
-      </h1>
+    <div className="max-w-5xl mx-auto mt-10">
+      <h2 className="text-2xl font-bold text-blue-700 mb-6 text-center">
+        My Bookings
+      </h2>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 shadow-md rounded-lg">
-          <thead className="bg-blue-100 text-gray-800">
-            <tr>
-              <th className="py-3 px-4 border">#</th>
-              <th className="py-3 px-4 border">Item Name</th>
-              <th className="py-3 px-4 border">Category</th>
-              <th className="py-3 px-4 border">User</th>
-              <th className="py-3 px-4 border">Start Date</th>
-              <th className="py-3 px-4 border">End Date</th>
-              <th className="py-3 px-4 border">Total Price</th>
-              <th className="py-3 px-4 border">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings.map((booking, index) => (
-              <tr key={booking._id} className="text-center hover:bg-gray-50">
-                <td className="py-2 px-4 border">{index + 1}</td>
-                <td className="py-2 px-4 border">
-                  {booking.item?.name || "Unknown Item"}
-                </td>
-                <td className="py-2 px-4 border">
-                  {booking.item?.category || "-"}
-                </td>
-                <td className="py-2 px-4 border">
-                  {booking.user?.name || "Guest"}
-                </td>
-                <td className="py-2 px-4 border">
-                  {new Date(booking.startDate).toLocaleDateString()}
-                </td>
-                <td className="py-2 px-4 border">
-                  {new Date(booking.endDate).toLocaleDateString()}
-                </td>
-                <td className="py-2 px-4 border text-green-600 font-semibold">
-                  ₹{booking.totalPrice}
-                </td>
-                <td className="py-2 px-4 border">{booking.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {bookings.map((booking) => (
+          <div
+            key={booking._id}
+            className="bg-white shadow-md rounded-xl p-4 border hover:shadow-lg transition"
+          >
+            <img
+              src={booking.item?.image || "/no-image.jpg"}
+              alt={booking.item?.name}
+              className="w-full h-48 object-cover rounded-lg mb-3"
+            />
+            <h3 className="text-lg font-semibold text-blue-800">
+              {booking.item?.name}
+            </h3>
+            <p>📅 {new Date(booking.startDate).toLocaleDateString()} → {new Date(booking.endDate).toLocaleDateString()}</p>
+            <p>💰 ₹{booking.totalPrice}</p>
+            <p className="text-sm text-gray-600 mt-2">
+              Location: {booking.item?.location || "N/A"}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

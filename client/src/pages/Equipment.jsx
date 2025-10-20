@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../api";
 import ReviewSection from "../components/ReviewSection";
 
 export default function Equipment() {
@@ -11,7 +11,7 @@ export default function Equipment() {
   useEffect(() => {
     const fetchEquipments = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/items");
+        const res = await API.get("/items");
         const allItems = res.data.items || [];
         const filtered = allItems.filter(
           (item) => item.category?.toLowerCase().trim() === "equipment"
@@ -34,7 +34,6 @@ export default function Equipment() {
     if (!dates.startDate || !dates.endDate)
       return alert("⚠️ Please select booking dates.");
 
-    // ✅ Calculate total number of days
     const start = new Date(dates.startDate);
     const end = new Date(dates.endDate);
     const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
@@ -49,37 +48,22 @@ export default function Equipment() {
       totalPrice,
     };
 
-    console.log("📦 Booking Data Sending:", bookingData);
-
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/bookings",
-        bookingData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (res.data.success) {
-        alert("✅ Booking Successful!");
-      } else {
-        alert("❌ " + (res.data.message || "Booking Failed"));
-      }
+      const res = await API.post("/bookings", bookingData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.success) alert("✅ Booking Successful!");
+      else alert("❌ " + (res.data.message || "Booking Failed"));
     } catch (err) {
-      console.error("❌ Booking Failed:", err.response?.data || err.message);
+      console.error("❌ Booking Failed:", err);
       alert("❌ Booking Failed. Try again.");
     }
   };
 
-  if (loading)
-    return <div className="text-center p-10">⏳ Loading equipment...</div>;
-  if (error)
-    return <div className="text-center p-10 text-red-600">⚠️ {error}</div>;
+  if (loading) return <div className="text-center p-10">⏳ Loading equipment...</div>;
+  if (error) return <div className="text-center p-10 text-red-600">⚠️ {error}</div>;
   if (!equipments.length)
-    return (
-      <div className="text-center p-10 text-gray-600">
-        ⚠️ No equipment found.
-      </div>
-    );
+    return <div className="text-center p-10 text-gray-600">⚠️ No equipment found.</div>;
 
   return (
     <div className="p-6">

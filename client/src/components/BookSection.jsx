@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import API from "../api";
 
 export default function BookSection({ itemId, itemName, price }) {
   const [startDate, setStartDate] = useState("");
@@ -9,25 +9,17 @@ export default function BookSection({ itemId, itemName, price }) {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
 
-      if (!user) {
-        alert("Please login before booking!");
-        return;
-      }
+      if (!user) return alert("Please login before booking!");
+      if (!startDate || !endDate) return alert("Please select both dates!");
 
-      if (!startDate || !endDate) {
-        alert("Please select both start and end dates!");
-        return;
-      }
-
-      // ✅ Calculate total price based on days
       const start = new Date(startDate);
       const end = new Date(endDate);
       const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) || 1;
       const totalPrice = days * price;
 
       const bookingData = {
-        itemId: itemId,
-        userId: user._id, // ✅ send logged-in user ID
+        itemId,
+        userId: user._id,
         startDate,
         endDate,
         totalPrice,
@@ -35,7 +27,7 @@ export default function BookSection({ itemId, itemName, price }) {
 
       console.log("📤 Sending Booking Data:", bookingData);
 
-      const res = await axios.post("http://localhost:5000/api/bookings", bookingData);
+      await API.post("/bookings", bookingData);
       alert("✅ Booking Successful!");
     } catch (err) {
       console.error("❌ Booking error:", err);

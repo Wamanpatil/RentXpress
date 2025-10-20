@@ -1,63 +1,81 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
-// ✅ Components
 import Navbar from "./components/Navbar";
 
-// ✅ Pages
+// ✅ Page Imports
 import Home from "./pages/Home";
 import Equipment from "./pages/Equipment";
 import Vehicles from "./pages/Vehicles";
 import Rooms from "./pages/Rooms";
-import ItemManager from "./pages/ItemManager"; // Owner Add Item Page
-import Bookings from "./pages/Bookings";       // User Booking Dashboard
+import BookNow from "./pages/BookNow";
+import Bookings from "./pages/Bookings";
+import BookingsDashboard from "./pages/BookingsDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import ItemManager from "./pages/ItemManager";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AdminDashboard from "./pages/AdminDashboard"; // Admin Panel
 
-function App() {
+// ✅ Optional Footer
+function Footer() {
+  return (
+    <footer className="bg-blue-700 text-white text-center py-3 mt-10">
+      © {new Date().getFullYear()} RentXpress — All Rights Reserved.
+    </footer>
+  );
+}
+
+// ✅ 404 Page
+function NotFound() {
+  return (
+    <div className="flex flex-col items-center justify-center h-screen text-center">
+      <h1 className="text-5xl font-bold text-red-600 mb-4">404</h1>
+      <p className="text-gray-600 text-lg mb-6">
+        Oops! The page you’re looking for doesn’t exist.
+      </p>
+      <a
+        href="/"
+        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+      >
+        Go Back Home
+      </a>
+    </div>
+  );
+}
+
+export default function App() {
   return (
     <Router>
-      {/* ✅ Persistent Navbar (appears on all pages) */}
+      {/* ✅ Navbar always visible */}
       <Navbar />
 
-      {/* ✅ Main Layout Container */}
-      <div className="bg-gray-50 min-h-screen">
+      <div className="min-h-[90vh] bg-gray-50">
         <Routes>
-          {/* 🏠 Home Page */}
+          {/* ✅ Main Pages */}
           <Route path="/" element={<Home />} />
-
-          {/* 🧰 Rental Category Pages */}
           <Route path="/equipment" element={<Equipment />} />
           <Route path="/vehicles" element={<Vehicles />} />
           <Route path="/rooms" element={<Rooms />} />
 
-          {/* 🧾 Bookings Dashboard (For Users) */}
+          {/* ✅ Booking Related */}
+          <Route path="/booknow" element={<BookNow />} />
           <Route path="/bookings" element={<Bookings />} />
+          <Route path="/bookingsdashboard" element={<BookingsDashboard />} />
 
-          {/* 🧳 Owner Panel (To Add or Manage Items) */}
+          {/* ✅ Admin & Owner */}
           <Route path="/itemmanager" element={<ItemManager />} />
-
-          {/* 🧑‍💼 Admin Dashboard (Full Access) */}
           <Route path="/admin" element={<AdminDashboard />} />
 
-          {/* 🔐 Authentication Routes */}
+          {/* ✅ Authentication */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* 🚧 Catch-All 404 Page */}
-          <Route
-            path="*"
-            element={
-              <div className="flex items-center justify-center h-screen text-gray-600 text-xl">
-                404 - Page Not Found 🚧
-              </div>
-            }
-          />
+          {/* ✅ 404 Fallback */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
+
+      {/* ✅ Footer */}
+      <Footer />
     </Router>
   );
 }
-
-export default App;
